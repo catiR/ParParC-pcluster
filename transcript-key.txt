@@ -1,0 +1,196 @@
+0001	A dog splashes in the water.
+0002	Two men are ice fishing.
+0003	Two boys play in a puddle.
+0004	A skier pauses on a mountaintop.
+0005	A boy is covered in bubbles.
+0006	Two boys make faces.
+0007	People stand inside a rock dome.
+0008	A dog runs through the snow.
+0009	A boy plays in the fountains.
+0010	A dog chases another dog.
+0011	A boy smiles underwater.
+0012	A snowmobiler flies through the air.
+0013	People are riding around on snowmobiles.
+0014	A man is rock climbing.
+0015	A man climbs a rocky wall.
+0016	A child plays with a fountain.
+0017	Two dogs splash through the water.
+0018	The snowboarder is sitting down.
+0019	Bicyclists are standing at an intersection.
+0020	Two dogs wrestle in a field.
+0021	A man in yellow grimaces.
+0022	Two children ride in toy cars.
+0023	A dog walks through a field.
+0024	People eat under green trees.
+0025	A boy eats with a spoon.
+0026	A girl rides a horse.
+0027	A korean man sells soda.
+0028	People sit on benches.
+0029	Women play lacrosse.
+0030	A man sits on a rock.
+0031	Children play in a water fountain.
+0032	A biker enjoys a coffee.
+0033	A waterskier performs tricks.
+0034	Two boys wakeboard.
+0035	People stare at the orange fish.
+0036	A boy in white plays baseball.
+0037	The boy is climbing.
+0038	A person hikes on a mountain.
+0039	A child runs through a field.
+0040	Someone is suspended from electrical wires.
+0041	Two dogs walk through the snow.
+0042	A boy enjoys a rain shower.
+0043	A dog runs in a field.
+0044	People stand on a colorful balcony.
+0045	Three women walk down the street.
+0046	A girl walks in the ocean.
+0047	A dog retrieves a golf ball.
+0048	A dog swims in a pool.
+0049	A girl jumps on the trampoline.
+0050	A boy is covered with marker.
+0051	A baby is laughing.
+0052	People stand inside a windowed structure.
+0053	The girls walk down the street.
+0054	An old man sits.
+0055	Men are standing beside a stonesign.
+0056	A dog trots through the grass.
+0057	A rock climber ascends.
+0058	Three are standing on a mountain.
+0059	Two young people serve food.
+0060	Two children peek out.
+0061	Two men are watching something.
+0062	A wet spaniel clears a jump.
+0063	A man takes out a cigarette.
+0064	A man relaxes with his backpack.
+0065	There are many different colored balls.
+0066	This person is rock climbing.
+0067	A man climbs steep rocks.
+0068	Two children are shown upside down.
+0069	A man kayaks through rough water.
+0070	An orchestra performs.
+0071	Two women ride their three wheelers.
+0072	A man kayaks in rough water.
+0073	A dog leaps on a man.
+0074	Two brownish dogs are fighting.
+0075	A person walks near a fence.
+0076	A child plays in the mud.
+0077	A creek winds through the woods.
+0078	Scuba diver submerged in water.
+0079	Two people kiss on the beach.
+0080	A child swims with a woman.
+0081	The hiker nears a creek.
+0082	A boy points.
+0083	A dog runs across the grass.
+0084	Two young girls fly a kite.
+0085	Two children run towards the lagoon.
+0086	The dog runs through the water.
+0087	A dog jumps into the water.
+0088	A little white dog begs.
+0089	Man brushes image in the sand.
+0090	A woman is playing guitar onstage.
+0091	Dog jumps to catch a snowball.
+0092	A dog runs through tall grass.
+0093	A toyota car drives into water.
+0094	Three children play on corn stacks.
+0095	A dog jumps over a creek.
+0096	A man jumps off a hill.
+0097	A dog sniffs a tree stump.
+0098	Two lizards fight in the water.
+0099	A collie runs down a slide.
+0100	The woman is walking her dogs.
+0101	Kids play soccer on a field.
+0102	Two dogs run for a stick.
+0103	A child is on a slide.
+0104	A dog walks through some mud.
+0105	The couple are looking downriver.
+0106	A young man rides a wakeboard.
+0107	A man wakeboards on a lake.
+0108	People sit against a wall.
+0109	Two people are in bed.
+0110	A dog splashes through the water.
+0111	Two women walk down a street.
+0112	Two dogs play together.
+0113	Shirtless men hike through a canyon.
+0114	Long necked dog jumps on.
+0115	A blonde lady with sunglasses smiles.
+0116	A dog swims towards a waterfall.
+0117	A boy jumps.
+0118	A dog looks behind itself.
+0119	Two snowboarders throw up their hands.
+0120	The man holds a light sabre.
+0121	Bikers race through a forest.
+0122	Two dogs fight.
+0123	Man scales rock.
+0124	A man climbs a large rock.
+0125	People are lying on lounge chairs.
+0126	A man climbs up a mountain.
+0127	A kayaker kayaks through the water.
+0128	Four children jump in a pool.
+0129	A dog shakes off water.
+0130	A man and woman blow bubbles.
+0131	A boy plays a game.
+0132	Two kids eat corndogs outside.
+0133	A man uses an outdoor shower.
+0134	A man does yard work.
+0135	Two boxers are in the ring.
+0136	Two bikers bike along the street.
+0137	A lady shows her sword.
+0138	One little boy dribbles his basketball.
+0139	The fishemen enjoy the warm day.
+0140	Young boys play touch football.
+0141	A woman stands near a fountain.
+0142	A man descends a snowy mountain.
+0143	A man parachutes into the desert.
+0144	Two brown dogs play.
+0145	A little girl is running.
+0146	Three dogs run across the track.
+0147	The men are climbing.
+0148	Racing greyhounds leave the starting gate.
+0149	A man fishes.
+0150	A hiker makes his way downhill.
+0151	The boy in glasses is reading.
+0152	A man stands outside.
+0153	A dalmatian runs through the woods.
+0154	Two dogs race through a field.
+0155	A woman is riding her bicycle.
+0156	A dog lays on the snow.
+0157	The child is walking through straw.
+0158	A girl is in a dress.
+0159	Two couples pose with a snowman.
+0160	A man works on a car.
+0161	A baby looks through his crib.
+0162	The dog runs through the snow.
+0163	A dog is shaking off water.
+0164	A person poses in the snow.
+0165	A dog jumps onto the sidewalk.
+0166	A man jumps while snow skiing.
+0167	A boy is surrounded by pigeons.
+0168	A dog jumps over the pole.
+0169	People in dark clothing sit together.
+0170	A dog sprints across the grass.
+0171	A dog runs through the grass.
+0172	A young girl plays outside.
+0173	Kids play ultimate frisbee.
+0174	The little girl is eating outdoors.
+0175	Three people participate in rock climbing.
+0176	The dog sits by a snowdrift.
+0177	A boy holds a large icicle.
+0178	A baby wears a santa hat.
+0179	This boy is throwing a snowball.
+0180	A dog plays in the snow.
+0181	Three dogs run in the snow.
+0182	The motorcyclist has reached the summit.
+0183	A child is using the bathroom.
+0184	The children play an indoor game.
+0185	A dog runs outside.
+0186	Children in uniforms chase pigeons.
+0187	A dog chases a red ball.
+0188	Two people ski in the mountains.
+0189	Dogs race on a track.
+0190	A lady is swinging and smiling.
+0191	A snowboarder crashes into another.
+0192	A person skis with their dog.
+0193	A boy runs through the grass.
+0194	A child plays on the dirt.
+0195	A young girl is rock climbing.
+0196	Girl jumps from couch to couch.
