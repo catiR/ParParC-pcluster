@@ -314,7 +314,7 @@ def make_clusters(cluster_feats, n_clusters = None):
 	#print(dm.labels)
 	
 	print('====================')
-	print(f'N Recs = {nrecs}')
+	print(f'N Recordings = {nrecs}')
 	cs = [(k,kmd.fasterpam(X,k)) for k in cluster_range]
 	best_k, best_c = min(cs, key = lambda x: x[1].loss)
 	for k,c in cs:
@@ -345,10 +345,11 @@ def f1(audioc_dir, mfaln_dir, json_path, sptk, tmp = './tmp/'):
 	#_ = featurise_sample(db_corpus, audioc_dir, sptk, tmp)
 	
 	
+	# TODO by sentence id instead of text match
 	# define the sample for this run
 	# TODO not hardcode this here
 	#fc = [] # retrieve all focuses
-	fc = [1, 5, 'N'] # word indices start 0
+	fc = [0,3,4] # word indices start 0
 	textfilter = { 'A boy eats with a spoon.': fc ,
 					'A boy runs through the grass.': fc ,
 					'A dog plays in the snow.': fc ,
@@ -358,7 +359,6 @@ def f1(audioc_dir, mfaln_dir, json_path, sptk, tmp = './tmp/'):
 					'A man jumps off a hill.': fc ,
 					'A man sits on a rock.': fc ,
 					'The dog runs through the snow.': fc ,
-					'A dalmatian runs through the woods.': fc ,
 					'A dog walks through some mud.': fc ,
 					'Two dogs walk through the snow.': fc ,
 					'A dog runs through tall grass.': fc }
@@ -369,9 +369,9 @@ def f1(audioc_dir, mfaln_dir, json_path, sptk, tmp = './tmp/'):
 	sample_feats = get_sample_feats(db_sample, mfaln_dir, tmp)
 	
 	#clusterable_feats = prep_feats(sample_feats)
-	#clusterable_feats = prep_feats(sample_feats, feature_list=['ene','swipe.f0'], pitch_rep = 0)
+	clusterable_feats = prep_feats(sample_feats, feature_list=['ene','swipe.f0'], pitch_rep = 0)
 	#clusterable_feats = prep_feats(sample_feats, feature_list=['ene','reaper.f0'], pitch_rep = 'low')
-	clusterable_feats = prep_feats(sample_feats, feature_list=['ene','reaper.f0', 'swipe.f0'])
+	#clusterable_feats = prep_feats(sample_feats, feature_list=['ene','reaper.f0', 'swipe.f0'])
 	
 	clusters = make_clusters(clusterable_feats)#, n_clusters = 5)
 	sc = sorted(clusters, key = lambda x: x[1])
@@ -383,6 +383,10 @@ def f1(audioc_dir, mfaln_dir, json_path, sptk, tmp = './tmp/'):
 	# TODO extract local relative rate as feature
 	# TODO visual display results
 	
+# measures to quickly estimate clustering quality...
+# average number of unique speakers per cluster,
+#  unique sentences per cluster,
+#  average percent of each cluster's sentences whose focus was that cluster's most common focus?
 
 
 

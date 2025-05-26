@@ -5,7 +5,13 @@ Edit `textfilter` in `ppc_pcluster.py` to change the sample of sentences to clus
 
 Requires to install [SPTK](https://github.com/sp-nitech/SPTK)
 
+## Output
 
+Audio file IDs like `0104_1_j` include sentence text ID `0104`, focus position `1` (indexing startd at `0`, `N` is no focus specified), and speaker ID `j`
+
+Ideal prosodic clusters should consist mainly of a single focus position, with optionally some N.
+
+Clustering across focus conditions by speaker ID (or gender), or by sentence text, could mean sensitivity to (para)linguistic distractors. Uninterpretable clustering, especially with high loss, could mean failure of the acoustic feature set or an incoherent choice of input sample.
 
 ### Data
 
