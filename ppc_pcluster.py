@@ -1,8 +1,15 @@
 import json, os, re, glob, subprocess
+import librosa
 import numpy as np
 from copy import deepcopy
 from dtw import dtw
+from scipy import stats
 import kmedoids as kmd
+
+#ppc-pcluster
+# - perform automatic prosodic clustering based on acoustic features
+# - evaluate the quality of these clusters
+# - TODO: save/output the clusters
 
 
 # clean
@@ -24,13 +31,15 @@ def emt(s,i):
 	return ' '.join(s)
 
 
+# to zscore a piece of data by factors calculated externally from larger data
+# and/or custom handle invalid feature values
 def z_score(x, mean, std):
 	return (x - mean) / std
 	
 	
 # extract sample
 # of recordings from db according to textfilter
-#  textfilter: dict of {sentence_text : [optional, emphasised, positions, ...]}
+#  textfilter: dict of {sentence_id : [optional, emphasised, positions, ...]}
 #   positions are word indices or 'N' unspecified/reader's default emphasis
 #   empty list matches all positions
 def extract_sample(db, textfilter):
@@ -40,8 +49,7 @@ def extract_sample(db, textfilter):
 	for sent, poss in textfilter.items():
 		sentsample=db
 		if sent:
-			s = cln(sent)
-			sentsample = {k:v for k,v in db.items() if s == cln(v["sentence_text"])}
+			sentsample = {k:v for k,v in db.items() if sent == v["sentence_id"]}
 		if poss:
 			poss = [str(p) for p in poss]
 			sentsample = {k:v for k,v in sentsample.items() if v["focus_index"] in poss}
@@ -57,6 +65,42 @@ def extract_sample(db, textfilter):
 
 
 
+# librosa rmse
+def get_rmse(wpath, khz, fs, znorm = True):
+    """
+    Returns an array of RMSE values for a given speech.
+    """
+    
+    audio, sr = librosa.load(wpath, sr=khz*1000)
+    hop = khz * fs # hop size in number of samples
+    fl = khz * 30 # frame length (window) in number of samples 
+    # set to 30ms window following cheng 2013, maybe change??
+    rmse = librosa.feature.rms(y=audio,frame_length=fl,hop_length=hop)
+    rmse = rmse[0] 
+    if znorm:
+        rmse = stats.zscore(rmse)
+    return rmse
+    
+    
+    
+
+# utility to run sptk pitch commands 
+# on sptk-formatted data,
+# given sptk algorithm number ID + executable path
+# sr: sample rate in khz
+# fs: frame shift in ms
+# ts: voicing threshold parameters for each algorithm
+#    defaults t0 0.0 t1 0.3 t2 0.9 t4 0.01
+#    note - swipe t1 had lot of problems finding any voicing
+def run_pitch(sptk_fmt,lp,hp,anum,sptk,sr=16, fs=10, ts = " -t0 0.4 -t1 0.2 -t2 1.1 -t4 0.15"):
+	f0_raw_data = subprocess.run(
+		f"{sptk}x2x +sd {sptk_fmt} | \
+		{sptk}pitch -a {anum} -s 16 -p {sr*fs} {lp}{hp}{ts}\
+		| {sptk}x2x +da", shell=True, capture_output=True).stdout
+	f0_raw_data = f0_raw_data.decode()
+	return f0_raw_data
+				
+				
 # compute acoustic features from sample's audio files
 #	(corpus is provided as 16khz mono wav)
 #  and save everything in feature_dir
@@ -68,9 +112,11 @@ def featurise_sample(sample, audio_dir, sptk, feature_dir):
 	sr = 16  # Sample rate in kHz
 	fs = 10  # Frame shift in ms
 	
-	#lp = 50  # initial low pitch bound for 2pass
-	#hp = 700 # initial high pitch bound
+	lp = " -L 50"  # initial low pitch bound arg for 2pass
+	hp = " -H 700" # initial high pitch bound arg
 	
+	vf_min = 50 # minimum number voiced frames to keep 2ndpass data
+	# TODO something better after implementing sth to be a ratio of e.g. nonsilence
 
 	for rec in sample.values():
 		fid = rec["file_id"]
@@ -86,28 +132,34 @@ def featurise_sample(sample, audio_dir, sptk, feature_dir):
 				shell=True)
 		
 		
-		# pitch
-		# TODO 2pass re estimation TODO
-		if not os.path.exists(f'{feature_dir}{fid}.rapt.f0'):
-			_ = subprocess.run(
-				f"{sptk}x2x +sd {sptk_fmt} | {sptk}pitch -a 0 -s 16 -p {sr*fs} \
-				| {sptk}x2x +da > {feature_dir}{fid}.rapt.f0", 
-				shell=True)
-		if not os.path.exists(f'{feature_dir}{fid}.swipe.f0'):
-			_ = subprocess.run(
-				f"{sptk}x2x +sd {sptk_fmt} | {sptk}pitch -a 1 -s 16 -p {sr*fs} \
-				| {sptk}x2x +da > {feature_dir}{fid}.swipe.f0", 
-				shell=True)
-		if not os.path.exists(f'{feature_dir}{fid}.reaper.f0'):
-			_ = subprocess.run(
-				f"{sptk}x2x +sd {sptk_fmt} | {sptk}pitch -a 2 -s 16 -p {sr*fs} \
-				| {sptk}x2x +da > {feature_dir}{fid}.reaper.f0", 
-				shell=True)
-		if not os.path.exists(f'{feature_dir}{fid}.harvest.f0'):
-			_ = subprocess.run(
-				f"{sptk}x2x +sd {sptk_fmt} | {sptk}pitch -a 4 -s 16 -p {sr*fs} \
-				| {sptk}x2x +da > {feature_dir}{fid}.harvest.f0", 
-				shell=True)
+		# pitch - - - - - - - - - - -
+		# 2-pass method of Hirst,
+		# falling back to SPTK's defaults if too narrow/untrackable.
+		sptk_pitch_algos = [('rapt','0'), ('swipe','1'), ('reaper','2'), ('harvest','4')]
+		
+		
+		for aname, anum in sptk_pitch_algos:
+			save_path = f'{feature_dir}{fid}.{aname}.f0'
+			if not os.path.exists(save_path):
+				f0_1pass_rd = run_pitch(sptk_fmt, lp, hp, anum, sptk, ts = " -t0 0.7 -t1 0.2 -t2 1.6 -t4 0.2")
+				f0_1pass = [f for f in map(float,f0_1pass_rd.splitlines()) if f != 0]
+				
+				q1 = np.quantile(f0_1pass,0.25)
+				q3 = np.quantile(f0_1pass,0.75)
+				pceil = 2.5 * q3
+				pfloor = 0.75 * q1
+				
+				f0_rd = run_pitch(sptk_fmt, f' -L {pfloor}', f' -H {pceil}', anum, sptk)
+				
+				
+				#print(len(f0_1pass_rd),len(f0_1pass))
+				if len([f for f in map(float,f0_rd.splitlines()) if f != 0]) < 50:
+					f0_def = run_pitch(sptk_fmt, '', '', anum, sptk, ts='')
+					print(f'{aname} 2ndpass failed for {fid}, default got {len(f0_def)}')
+					f0_rd = f0_def
+				
+				with open(save_path, 'w') as handle:
+					handle.write(f0_rd)
 		
 		if not os.path.exists(f'{feature_dir}{fid}.ene'):
 			mfcc = subprocess.check_output(
@@ -130,6 +182,13 @@ def featurise_sample(sample, audio_dir, sptk, feature_dir):
 		#		shell=True).decode().splitlines()
 		#plpenergy = plp[12::13] # confirmed same as energy from equivalent mfcc command.
 		
+		
+		# librosa rmse
+		if not os.path.exists(f'{feature_dir}{fid}.rmse'):
+			rmse = get_rmse(wav, sr, fs)
+			with open(f"{feature_dir}{fid}.rmse",'w') as handle:
+				handle.write('\n'.join([str(x) for x in rmse])+'\n')
+		
 		print('Features:', wav)
 		_ = subprocess.run(["rm", sptk_fmt])
 	
@@ -142,6 +201,9 @@ def feature_reader(path,ext):
 	with open(path,'r') as handle:
 		feat_data = handle.read().splitlines()
 	feat_data = [float(x) for x in feat_data]
+	
+	if ext == 'rmse':
+		feat_data = feat_data[:-1] # !! they handle frames differently
 	
 	return feat_data
 	
@@ -190,7 +252,7 @@ def get_sample_feats(sample, aligns_dir, feats_dir):
 
 	
 	
-def prep_feats(sample_data, feature_list=['ene','swipe.f0'], pitch_rep = 'low'):
+def prep_feats(sample_data, feature_list=['ene','swipe.f0'], pitch_rep = 0):
 
 	feature_list = sorted(feature_list)
 	
@@ -333,47 +395,44 @@ def make_clusters(cluster_feats, n_clusters = None):
 	
 
 # a function to do things
-def f1(audioc_dir, mfaln_dir, json_path, sptk, tmp = './tmp/'):
+def f1(audioc_dir, mfaln_dir, json_path, sptk_path, tmp_dir):
 
-	with open('paraphrase.json','r') as handle:
+	with open(json_path,'r') as handle:
 		db = json.load(handle)
 		
 	
 	# make all potential acoustic features
 	# TODO put this somewhere else since it only happens once
 	#db_corpus = extract_sample(db, {'':[]}) #get whole corpus
-	#_ = featurise_sample(db_corpus, audioc_dir, sptk, tmp)
+	#_ = featurise_sample(db_corpus, audioc_dir, sptk_path, tmp_dir)
+
 	
-	
-	# TODO by sentence id instead of text match
 	# define the sample for this run
 	# TODO not hardcode this here
 	#fc = [] # retrieve all focuses
-	fc = [0,3,4] # word indices start 0
-	textfilter = { 'A boy eats with a spoon.': fc ,
-					'A boy runs through the grass.': fc ,
-					'A dog plays in the snow.': fc ,
-					'A dog runs through the grass.': fc ,
-					'A dog runs through the snow.': fc ,
-					'A dog trots through the grass.': fc ,
-					'A man jumps off a hill.': fc ,
-					'A man sits on a rock.': fc ,
-					'The dog runs through the snow.': fc ,
-					'A dog walks through some mud.': fc ,
-					'Two dogs walk through the snow.': fc ,
-					'A dog runs through tall grass.': fc }
+	focus_pos = [1,4] # word indices start 0
+	sent_ids = ['0025', '0193', '0180', 'ö171', '0008', '0096', '0030', '0162', '0104']
+	#sent_ids = ['0082', '0117', '0122']#, '0149']
+	
+	#! may need to vary focus positions by sentence e.g. different word counts
+	textfilter = {sid : focus_pos for sid in set(sent_ids)}
 					
 	db_sample = extract_sample(db, textfilter)
 		
 	# read acoustic features for clustering
-	sample_feats = get_sample_feats(db_sample, mfaln_dir, tmp)
+	sample_feats = get_sample_feats(db_sample, mfaln_dir, tmp_dir)
+	#for k,v in sample_feats['0008_4_i'].items():
+	#	print(k)
+	#	print(v)
+	#import fish
 	
 	#clusterable_feats = prep_feats(sample_feats)
-	clusterable_feats = prep_feats(sample_feats, feature_list=['ene','swipe.f0'], pitch_rep = 0)
-	#clusterable_feats = prep_feats(sample_feats, feature_list=['ene','reaper.f0'], pitch_rep = 'low')
-	#clusterable_feats = prep_feats(sample_feats, feature_list=['ene','reaper.f0', 'swipe.f0'])
+	clusterable_feats = prep_feats(sample_feats, feature_list=['rmse','swipe.f0'])
+	#clusterable_feats = prep_feats(sample_feats, feature_list=['ene','reaper.f0', 'harvest.f0'])
+	#clusterable_feats = prep_feats(sample_feats, feature_list=['swipe.f0'])
+	# pitch rep 0 seems to be better than low for now
 	
-	clusters = make_clusters(clusterable_feats)#, n_clusters = 5)
+	clusters = make_clusters(clusterable_feats, n_clusters = 8)
 	sc = sorted(clusters, key = lambda x: x[1])
 	for r,c in sc:
 		print(r,c,emt(db_sample[r]['sentence_text'],db_sample[r]['focus_index']))
@@ -387,6 +446,9 @@ def f1(audioc_dir, mfaln_dir, json_path, sptk, tmp = './tmp/'):
 # average number of unique speakers per cluster,
 #  unique sentences per cluster,
 #  average percent of each cluster's sentences whose focus was that cluster's most common focus?
+# TODO learn optimal weights of each feature/dimension
+#  - > need custom local dist func in DTW whose parameters fit based on clustering outome metric,
+#     but the DTW probably allows that
 
 
 
@@ -406,10 +468,15 @@ if __name__ == "__main__":
 	
 	sptk_bin = '~/work/env/SPTK/bin/'
 	
-	audioc_dir, mfaln_dir, json_path, sptk_bin = [os.path.expanduser(x) 
-		for x in [audioc_dir, mfaln_dir, json_path, sptk_bin]]
+	# store extracted speech features here
+	feats_dir = './tmp2/'
+	
+	audioc_dir, mfaln_dir, json_path, sptk_bin, feats_dir = [os.path.expanduser(x) 
+		for x in [audioc_dir, mfaln_dir, json_path, sptk_bin, feats_dir]]
 		
-	f1(audioc_dir, mfaln_dir, json_path, sptk_bin)
+	f1(audioc_dir, mfaln_dir, json_path, sptk_bin, feats_dir)
+
+
 
 
 
