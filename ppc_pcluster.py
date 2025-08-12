@@ -4,6 +4,7 @@ import numpy as np
 from copy import deepcopy
 from dtw import dtw
 from scipy import stats
+from scipy.spatial.distance import cdist
 import kmedoids as kmd
 
 #ppc-pcluster
@@ -252,7 +253,7 @@ def get_sample_feats(sample, aligns_dir, feats_dir):
 
 	
 	
-def prep_feats(sample_data, feature_list=['ene','swipe.f0'], pitch_rep = 0):
+def prep_feats(sample_data, feature_list=['ene','swipe.f0'], pitch_rep = 0, znorm_all = False):
 
 	feature_list = sorted(feature_list)
 	
@@ -282,11 +283,14 @@ def prep_feats(sample_data, feature_list=['ene','swipe.f0'], pitch_rep = 0):
 				data = [z_score(low_val, mean, std) if x == 0 
 					else z_score(x, mean, std) for x in data]
 				
-		elif '.ene' in ext:
-			# replace -inf with a low value?
-			if -np.inf in data:
-				low_val = min(data) - 1
-				data = [low_val if x == -np.inf else x for x in data]
+		else:
+			if '.ene' in ext:
+				# replace -inf with a low value?
+				if -np.inf in data:
+					low_val = min(data) - 1
+					data = [low_val if x == -np.inf else x for x in data]
+			if znorm_all:
+				data = stats.zscore(data)
 		
 		return data
 	
@@ -325,16 +329,18 @@ def prep_feats(sample_data, feature_list=['ene','swipe.f0'], pitch_rep = 0):
 
 
 
-def dtw_distance(x, y):
+def dtw_distance(x, y, local_dist):
 	"""
 	Returns the DTW distance between two pitch sequences.
 	"""  
-	alignment = dtw(x, y, keep_internals=True)
+	x,y = np.array(x),np.array(y)
+	dmat = cdist(x, y, metric = local_dist)
+	alignment = dtw(dmat)#, keep_internals=True)
 	return alignment.normalizedDistance
 	
 	
 # it will do pairs of file with self where dtw == 0
-def pair_dists(data):
+def pair_dists(data, local_metric):
 
 	dtw_dists = []
 	
@@ -344,15 +350,15 @@ def pair_dists(data):
 		val1 = data[fid1]
 		for fid2 in fids:
 			val2 = data[fid2]
-			dtw_dists.append((f"{fid1}**{fid2}", dtw_distance(val1, val2)))
+			dtw_dists.append((f"{fid1}**{fid2}", dtw_distance(val1, val2, local_metric)))
 
 	return dtw_dists, fids
 	
 	
 
-def make_clusters(cluster_feats, n_clusters = None):
+def make_clusters(cluster_feats, local_metric, n_clusters = None):
 
-	dtw_dists, dindex = pair_dists(cluster_feats)
+	dtw_dists, dindex = pair_dists(cluster_feats, local_metric)
 	
 	nrecs = len(dindex)
 	X = [d[1] for d in dtw_dists]
@@ -375,13 +381,13 @@ def make_clusters(cluster_feats, n_clusters = None):
 	#print(f'Best k {dm.bestk}, L {dm.loss}')
 	#print(dm.labels)
 	
-	print('====================')
 	print(f'N Recordings = {nrecs}')
+	print('====================')
 	cs = [(k,kmd.fasterpam(X,k)) for k in cluster_range]
 	best_k, best_c = min(cs, key = lambda x: x[1].loss)
-	for k,c in cs:
-		bb = ' <--*' if k==best_k else ''
-		print(f' k {k}, L {c.loss:.2f}{bb}')
+	#for k,c in cs:
+	#	bb = ' <--*' if k==best_k else ''
+	#	print(f' k {k}, L {c.loss:.2f}{bb}')
 
 
 	print('')
@@ -395,7 +401,7 @@ def make_clusters(cluster_feats, n_clusters = None):
 	
 
 # a function to do things
-def f1(audioc_dir, mfaln_dir, json_path, sptk_path, tmp_dir):
+def f1(audioc_dir, mfaln_dir, json_path, sptk_path, tmp_dir, local_metric = 'euclidean'):
 
 	with open(json_path,'r') as handle:
 		db = json.load(handle)
@@ -432,7 +438,7 @@ def f1(audioc_dir, mfaln_dir, json_path, sptk_path, tmp_dir):
 	#clusterable_feats = prep_feats(sample_feats, feature_list=['swipe.f0'])
 	# pitch rep 0 seems to be better than low for now
 	
-	clusters = make_clusters(clusterable_feats, n_clusters = 8)
+	clusters = make_clusters(clusterable_feats, local_metric, n_clusters = 8)
 	sc = sorted(clusters, key = lambda x: x[1])
 	for r,c in sc:
 		print(r,c,emt(db_sample[r]['sentence_text'],db_sample[r]['focus_index']))
@@ -471,10 +477,14 @@ if __name__ == "__main__":
 	# store extracted speech features here
 	feats_dir = './tmp2/'
 	
+	# choice of metric for local costs used in DTW
+	# -- scipy.spatial.distance.cdist
+	local_dtw_cost = 'euclidean'
+	
 	audioc_dir, mfaln_dir, json_path, sptk_bin, feats_dir = [os.path.expanduser(x) 
 		for x in [audioc_dir, mfaln_dir, json_path, sptk_bin, feats_dir]]
 		
-	f1(audioc_dir, mfaln_dir, json_path, sptk_bin, feats_dir)
+	f1(audioc_dir, mfaln_dir, json_path, sptk_bin, feats_dir, local_dtw_cost)
 
 
 

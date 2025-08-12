@@ -1,9 +1,17 @@
 
+Requires to install [SPTK](https://github.com/sp-nitech/SPTK)
+
+Get DBA_multivariate.py [here](https://github.com/fpetitjean/DBA/blob/master/DBA_multivariate.py).
+
+
+#### Validate cluster-similarity-based classifications of sentence prosody
+
+Edit `ppc_oracle.py` to adjust the sentence inventory, acoustic feature set, and options including: number of clusters per focus position, discard very small clusters after initial clustering, handle missing values and normalise acoustic features, distance metric for computing DTW local cost matrix, whether to apply [DBA](https://github.com/fpetitjean/DBA) reducing clusters to centroids before performing classification.
+
+
 #### Cluster sentences based on prosodic similarity
 
 Edit `textfilter` in `ppc_pcluster.py` to change the sample of sentences to cluster.
-
-Requires to install [SPTK](https://github.com/sp-nitech/SPTK)
 
 ## Output
 
